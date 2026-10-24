@@ -1,10 +1,14 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
 
-  // DEV: proxy /api → Spring Boot (porta 8080)
+  // Configuração para publicação no GitHub Pages
+  base: mode === "github" ? "/sos-mulher-novo/" : "/",
+
+  // Servidor local
   server: {
     port: 5173,
     proxy: {
@@ -15,9 +19,13 @@ export default defineConfig({
     },
   },
 
-  // BUILD: compila direto na pasta de estáticos do Spring Boot
+  // Mantém o build original do Spring Boot
+  // e cria uma pasta separada para o GitHub Pages.
   build: {
-    outDir: "../backend/src/main/resources/static",
+    outDir:
+      mode === "github"
+        ? "../dist-github"
+        : "../backend/src/main/resources/static",
     emptyOutDir: true,
   },
-});
+}));
