@@ -1,0 +1,2 @@
+ziftIzmq filter=lfs diff=lfs merge=lfs -text
+sos-mulher-v2.zip filter=lfs diff=lfs merge=lfs -text

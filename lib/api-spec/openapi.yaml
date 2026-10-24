@@ -1,0 +1,1158 @@
+﻿openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: SOS Mulher API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User operations
+  - name: contacts
+    description: Emergency contacts operations
+  - name: posts
+    description: Community posts operations
+  - name: settings
+    description: User settings operations
+  - name: alerts
+    description: SOS alert operations
+  - name: auth
+    description: Authentication operations
+  - name: incidents
+    description: Incident reporting operations
+  - name: feedbacks
+    description: User feedback operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /users:
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user (onboarding)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Gender registration restricted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestrictedResponse"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user account and all associated data
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Account deleted
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{userId}/complete-onboarding:
+    post:
+      operationId: completeOnboarding
+      tags: [users]
+      summary: Mark onboarding as completed for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Onboarding completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/update-email:
+    put:
+      operationId: updateEmail
+      tags: [users]
+      summary: Update user email (checks for duplicates)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmailBody"
+      responses:
+        "200":
+          description: Email updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/update-password:
+    put:
+      operationId: updatePassword
+      tags: [users]
+      summary: Update user password (verifies current password before updating)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePasswordBody"
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{userId}/contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List emergency contacts for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmergencyContact"
+    post:
+      operationId: createContact
+      tags: [contacts]
+      summary: Add an emergency contact
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactBody"
+      responses:
+        "201":
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmergencyContact"
+        "422":
+          description: Contact limit reached (max 5)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{userId}/contacts/{contactId}:
+    delete:
+      operationId: deleteContact
+      tags: [contacts]
+      summary: Delete an emergency contact
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Contact deleted
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /posts:
+    get:
+      operationId: listPosts
+      tags: [posts]
+      summary: List community posts (chronological)
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommunityPost"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a community post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostBody"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPost"
+
+  /posts/{postId}:
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a community post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Post deleted
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{userId}/settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get user settings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+    put:
+      operationId: upsertSettings
+      tags: [settings]
+      summary: Upsert user settings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertSettingsBody"
+      responses:
+        "200":
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+
+  /alerts:
+    post:
+      operationId: createAlert
+      tags: [alerts]
+      summary: Create an SOS alert and trigger Phase 1 escalation (SMS simulation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAlertBody"
+      responses:
+        "201":
+          description: Alert created and SMS dispatched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+
+  /alerts/user/{userId}:
+    get:
+      operationId: listUserAlerts
+      tags: [alerts]
+      summary: List all SOS alerts for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /alerts/{alertId}/webhook/respond:
+    put:
+      operationId: webhookRespond
+      tags: [alerts]
+      summary: "Phase 3: Contact responds via keypad (digit 1 = confirm assistance)"
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookRespondBody"
+      responses:
+        "200":
+          description: Response processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookRespondResult"
+
+  /alerts/{alertId}/resolve:
+    put:
+      operationId: resolveAlert
+      tags: [alerts]
+      summary: Manually resolve an alert
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alert resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404":
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /alerts/trigger-voice:
+    post:
+      operationId: triggerVoiceCall
+      tags: [alerts]
+      summary: Trigger automated Twilio voice call when SOS timer expires at zero
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerVoiceBody"
+      responses:
+        "200":
+          description: Voice call dispatched (or gracefully skipped when Twilio not configured)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriggerVoiceResult"
+        "400":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Login with phone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/recover:
+    post:
+      operationId: recoverAccount
+      tags: [auth]
+      summary: Initiate account recovery by email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoverAccountBody"
+      responses:
+        "200":
+          description: Recovery token dispatched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverAccountResult"
+        "404":
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /incidents:
+    post:
+      operationId: createIncident
+      tags: [incidents]
+      summary: Register a new incident report (Boletim de OcorrÃªncia)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIncidentBody"
+      responses:
+        "201":
+          description: Incident created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+
+  /users/{userId}/incidents:
+    get:
+      operationId: listUserIncidents
+      tags: [incidents]
+      summary: List incident reports for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Incident"
+
+  /incidents/{incidentId}:
+    delete:
+      operationId: deleteIncident
+      tags: [incidents]
+      summary: Delete an incident report
+      parameters:
+        - name: incidentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Incident deleted
+        "404":
+          description: Incident not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /feedbacks:
+    post:
+      operationId: createFeedback
+      tags: [feedbacks]
+      summary: Submit user feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFeedbackBody"
+      responses:
+        "201":
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    RestrictedResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        redirect:
+          type: string
+      required:
+        - error
+        - redirect
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        cpf:
+          type: string
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        onboardingCompleted:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - phone
+        - onboardingCompleted
+        - createdAt
+
+    CreateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        cpf:
+          type: string
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+      required:
+        - name
+        - phone
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        cpf:
+          type: string
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+
+    UpdateEmailBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        email:
+          type: string
+      required:
+        - userId
+        - email
+
+    UpdatePasswordBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - userId
+        - currentPassword
+        - newPassword
+
+    LoginBody:
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: E-mail ou nome completo cadastrado
+        password:
+          type: string
+      required:
+        - identifier
+        - password
+
+    LoginResult:
+      type: object
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        phone:
+          type: string
+      required:
+        - userId
+        - userName
+        - phone
+
+    TriggerVoiceBody:
+      type: object
+      properties:
+        alertId:
+          type: integer
+        userName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+      required:
+        - alertId
+        - userName
+
+    TriggerVoiceResult:
+      type: object
+      properties:
+        status:
+          type: string
+        callSid:
+          type: string
+          nullable: true
+        message:
+          type: string
+      required:
+        - status
+        - message
+
+    EmergencyContact:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        relationship:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - name
+        - phone
+        - relationship
+        - createdAt
+
+    CreateContactBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        relationship:
+          type: string
+      required:
+        - name
+        - phone
+        - relationship
+
+    CommunityPost:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        content:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        audioUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - userName
+        - content
+        - createdAt
+
+    CreatePostBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        content:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        audioUrl:
+          type: string
+          nullable: true
+      required:
+        - userId
+        - userName
+        - content
+    UserSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        gpsEnabled:
+          type: boolean
+        notificationsEnabled:
+          type: boolean
+        cameraMicEnabled:
+          type: boolean
+        discreteMode:
+          type: boolean
+        biometricsEnabled:
+          type: boolean
+        coercionCode:
+          type: string
+          nullable: true
+        sosTimer:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true
+        highContrast:
+          type: boolean
+        largeText:
+          type: boolean
+        reduceMotion:
+          type: boolean
+      required:
+        - id
+        - userId
+        - gpsEnabled
+        - notificationsEnabled
+        - cameraMicEnabled
+        - discreteMode
+        - biometricsEnabled
+        - sosTimer
+        - highContrast
+        - largeText
+        - reduceMotion
+
+    UpsertSettingsBody:
+      type: object
+      properties:
+        gpsEnabled:
+          type: boolean
+        notificationsEnabled:
+          type: boolean
+        cameraMicEnabled:
+          type: boolean
+        discreteMode:
+          type: boolean
+        biometricsEnabled:
+          type: boolean
+        coercionCode:
+          type: string
+          nullable: true
+        sosTimer:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true
+        highContrast:
+          type: boolean
+        largeText:
+          type: boolean
+        reduceMotion:
+          type: boolean
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        status:
+          type: string
+          description: "pending | sms_sent | calling_cloud | resolved_by_contact"
+        timerDuration:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - status
+        - timerDuration
+        - createdAt
+
+    CreateAlertBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        timerDuration:
+          type: integer
+      required:
+        - userId
+
+    WebhookRespondBody:
+      type: object
+      properties:
+        digit:
+          type: string
+      required:
+        - digit
+
+    WebhookRespondResult:
+      type: object
+      properties:
+        resolved:
+          type: boolean
+        alert:
+          $ref: "#/components/schemas/Alert"
+          nullable: true
+      required:
+        - resolved
+
+    RecoverAccountBody:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+
+    RecoverAccountResult:
+      type: object
+      properties:
+        userId:
+          type: integer
+        email:
+          type: string
+          nullable: true
+        token:
+          type: string
+        message:
+          type: string
+      required:
+        - userId
+        - token
+        - message
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        nomeCompleto:
+          type: string
+        cpf:
+          type: string
+          nullable: true
+        narrative:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+          nullable: true
+        audioUrl:
+          type: string
+          nullable: true
+        witnesses:
+          type: array
+          items:
+            type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - nomeCompleto
+        - narrative
+        - createdAt
+
+    CreateIncidentBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        nomeCompleto:
+          type: string
+        cpf:
+          type: string
+          nullable: true
+        narrative:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+          nullable: true
+        audioUrl:
+          type: string
+          nullable: true
+        witnesses:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - userId
+        - nomeCompleto
+        - narrative
+
+    CreateFeedbackBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+          nullable: true
+        message:
+          type: string
+      required:
+        - message
+
+    FeedbackResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+          nullable: true
+        message:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - message
+        - createdAt
+

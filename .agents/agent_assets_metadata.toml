@@ -1,0 +1,25 @@
+uploads = []
+
+[[generated]]
+id = "kQ8fdlJCJXV9H8qBlIc8O"
+uri = "file://artifacts/mobile/assets/images/icon.png"
+type = "image"
+title = "sos_mulher_icon"
+
+[[outputs]]
+id = "jOgC2cS3neBIJg-AOCLZY"
+uri = "file://docs/documentacao-tecnica.md"
+type = "text"
+title = "Documentação Técnica — SOS Mulher"
+
+[[outputs]]
+id = "JIiH30hZ0qeH0Tp8uNUCY"
+uri = "file://SOS_Mulher_Projeto_Completo.zip"
+type = "unspecified"
+title = "SOS_Mulher_Projeto_Completo.zip — projeto completo (1 MB · 169 arquivos)"
+
+[[outputs]]
+id = "taJWbJEi8tajQryIsMM6e"
+uri = "file://PI2_EquipeMaria Janaina_Avaliacao2_Final.zip"
+type = "unspecified"
+title = "🗜️ ZIP — Todos os documentos juntos"

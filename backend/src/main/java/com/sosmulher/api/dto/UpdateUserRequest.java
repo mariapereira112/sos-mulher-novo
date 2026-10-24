@@ -1,0 +1,12 @@
+package com.sosmulher.api.dto;
+
+import lombok.Data;
+
+@Data
+public class UpdateUserRequest {
+    private String name;
+    private String phone;
+    private String email;
+    private String cpf;
+    private String gender;
+}
