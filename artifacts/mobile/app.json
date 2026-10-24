@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "SOS Mulher",
@@ -22,7 +23,8 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "output": "single"
     },
     "plugins": [
       "expo-router",
